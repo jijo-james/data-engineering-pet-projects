@@ -8,7 +8,26 @@ import sqlite3
 
 DATABASE_LOCATION = 'sqlite://my_played_tracks.sqlite'
 USER_ID = '31bkuggdupa7tuulnzslhhd4xmpe'
-TOKEN = 'BQDBfugYOJmWJZQTdlqldS_G1SXNguaTk6gUWcrcVj2MSYsYtDd08RiANHNTcPSqkBGPavMDyLazEKpLUHRo7gxq8HzUs3HtJzeRt-GgecOwGeLerKBah1ENVNBKtQDGzV6dwhvFV2HeFhOnYWweGtAhM2Uqr_ZSP_bvp00LzPCLxK6duG20TxZOFCeOmJT7ZRxNEyR0sPAwXQ'
+TOKEN = 'BQAaH7lsRgdX-4Vkj9ddM5jVlrYAZdNZYbWuz6wySoe3qTmMHohqbzSsNYC3N1Q5RJr8KIgVzEfheixzQpaaYAz8Q4Ln5BVe_xmgRYAf96SR03caEZPkZ9eBzg8fYlnDc9k7Kb4t2tXvEh--3xWZy9V3aJOu2OuacmESn7ivztvH9Qs5TaCf6iH1CZfZKVBkI5vrKklTwGZadg'
+
+
+def check_if_valid_data(df: pd.DataFrame) -> bool:
+
+    if df.empty:
+        print("No songs downloaded. Finish execution")
+        return False
+    
+    if pd.Series(df['played_at']).is_unique:
+        pass
+    else:
+        raise Exception("Primary key check is violated")
+    
+    if df.isnull().values.any():
+        raise Exception('Null value found')
+    
+    return True
+    
+
 
 if __name__ == '__main__':
 
@@ -49,4 +68,6 @@ if __name__ == '__main__':
 
     song_df = pd.DataFrame(song_dict, columns=['song_name', 'artist_name', 'played_at', 'timestamp'])
 
-    print(song_df)
+    if check_if_valid_data(song_df):
+        print("Data is valid")
+        print(song_df.shape[0])
