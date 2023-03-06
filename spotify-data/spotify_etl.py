@@ -6,9 +6,6 @@ from datetime import datetime
 import datetime
 import sqlite3
 
-DATABASE_LOCATION = 'sqlite:///my_played_tracks.sqlite'
-USER_ID = '31bkuggdupa7tuulnzslhhd4xmpe'
-TOKEN = 'BQAaH7lsRgdX-4Vkj9ddM5jVlrYAZdNZYbWuz6wySoe3qTmMHohqbzSsNYC3N1Q5RJr8KIgVzEfheixzQpaaYAz8Q4Ln5BVe_xmgRYAf96SR03caEZPkZ9eBzg8fYlnDc9k7Kb4t2tXvEh--3xWZy9V3aJOu2OuacmESn7ivztvH9Qs5TaCf6iH1CZfZKVBkI5vrKklTwGZadg'
 
 #Transform
 def check_if_valid_data(df: pd.DataFrame) -> bool:
@@ -17,31 +14,39 @@ def check_if_valid_data(df: pd.DataFrame) -> bool:
         print("No songs downloaded. Finish execution")
         return False
     
+    if df.isnull().values.any():
+        raise Exception('Null value found')
+
     if pd.Series(df['played_at']).is_unique:
         pass
     else:
         raise Exception("Primary key check is violated")
-    
-    if df.isnull().values.any():
-        raise Exception('Null value found')
-    
+
     return True
-    
 
 
-if __name__ == '__main__':
+def run_spotify_etl():
+
+    database_location = 'sqlite:///my_played_tracks.sqlite'
+    user_id = '31bkuggdupa7tuulnzslhhd4xmpe'
+    #spotify API token
+    token = 'BQAaH7lsRgdX-4Vkj9ddM5jVlrYAZdNZYbWuz6wySoe3qTmMHohqbzSsNYC3N1Q5RJr8KIgVzEfheixzQpaaYAz8Q4Ln5BVe_xmgRYAf96SR03caEZPkZ9eBzg8fYlnDc9k7Kb4t2tXvEh--3xWZy9V3aJOu2OuacmESn7ivztvH9Qs5TaCf6iH1CZfZKVBkI5vrKklTwGZadg'
+
 
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
-        "Authorization": "Bearer {token}".format(token=TOKEN)
+        "Authorization": "Bearer {}".format(token)
     }
 
     today = datetime.datetime.now()
     yesterday = today - datetime.timedelta(days=1)
     yesterday_unix_timestamp = int(yesterday.timestamp()) * 1000
 
-    response = requests.get('https://api.spotify.com/v1/me/player/recently-played', headers=headers)
+    response = requests.get(
+        'https://api.spotify.com/v1/me/player/recently-played',
+        headers=headers
+    )
 
     data = response.json()
 
@@ -66,7 +71,15 @@ if __name__ == '__main__':
         'timestamp': timestamps
     }
 
-    song_df = pd.DataFrame(song_dict, columns=['song_name', 'artist_name', 'played_at', 'timestamp'])
+    song_df = pd.DataFrame(
+        song_dict, 
+        columns=[
+        'song_name', 
+        'artist_name', 
+        'played_at', 
+        'timestamp'
+        ]
+    )
 
     if check_if_valid_data(song_df):
         print("Data is valid")
@@ -74,7 +87,7 @@ if __name__ == '__main__':
     
     #Load
 
-    engine = sqlalchemy.create_engine(DATABASE_LOCATION)
+    engine = sqlalchemy.create_engine(database_location)
     connection = sqlite3.connect('my_played_tracks.sqlite')
     cursor = connection.cursor()
 
